@@ -92,6 +92,8 @@
     BOOL _bounces;
 }
 
+- (void)exposeTopMostController;
+
 /**
  * Initializes and returns a newly created layered navigation controller.
  *

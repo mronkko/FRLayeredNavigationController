@@ -739,7 +739,7 @@ shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherG
     CGFloat initX = anchorInitX + (parentNavItem.nextItemDistance >= 0 ?
                                    parentNavItem.nextItemDistance :
                                    FRLayeredNavigationControllerStandardDistance);
-
+    
     BOOL relayoutExistingLayers = NO;
 
     // If minumumlayer width is set to zero or negative value, it is ignored.
@@ -751,6 +751,8 @@ shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherG
         }
     }
     navItem.initialViewPosition = CGPointMake(initX, 0);
+    
+    // Place the view halfway to the anchor position
     navItem.currentViewPosition = CGPointMake(anchorCurrentX + anchorWidth, 0);
     navItem.titleView = nil;
     navItem.title = nil;
@@ -787,7 +789,7 @@ shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherG
     void (^doNewFrameMove)() = ^() {
 
         CGFloat saved = [self savePlaceWanted:CGRectGetMinX(onscreenFrame)+width-overallWidth];
-        newVC.view.frame = CGRectMake(CGRectGetMinX(onscreenFrame) - saved,
+        newVC.view.frame = CGRectMake((CGRectGetMinX(onscreenFrame) - saved + overallWidth)/2,
                                       CGRectGetMinY(onscreenFrame),
                                       CGRectGetWidth(onscreenFrame),
                                       CGRectGetHeight(onscreenFrame));
@@ -806,11 +808,12 @@ shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherG
 
                 UIViewController* viewController = [self.viewControllers objectAtIndex:i];
 
+                viewController.layeredNavigationItem.initialViewPosition =
+                viewController.layeredNavigationItem.currentViewPosition;
+
                 viewController.layeredNavigationItem.currentViewPosition =
                 CGPointMake(x, viewController.layeredNavigationItem.currentViewPosition.y);
 
-                viewController.layeredNavigationItem.initialViewPosition =
-                viewController.layeredNavigationItem.currentViewPosition;
             }
             [self doLayout];
         }
@@ -834,6 +837,50 @@ shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherG
         doNewFrameMove();
         newFrameMoveCompleted(YES);
     }
+}
+
+- (void)exposeTopMostController{
+    
+    const CGFloat overallWidth = CGRectGetWidth(self.view.bounds) > 0 ?
+    CGRectGetWidth(self.view.bounds) :
+    [self getScreenBoundsForCurrentOrientation].size.width;
+    
+    void (^doNewFrameMove)() = ^() {
+        
+        //Move existing layers left to make space.
+        BOOL relayoutExistingLayers = TRUE;
+        
+        if(relayoutExistingLayers){
+            
+            CGFloat spacing = (overallWidth-self.minimumLayerWidth) /(CGFloat) [self.viewControllers count];
+            CGFloat x=0;
+            
+            for(NSInteger i = 1; i < ([self.viewControllers count]); ++i){
+                
+                x=x+spacing;
+                
+                UIViewController* viewController = [self.viewControllers objectAtIndex:i];
+                
+                viewController.layeredNavigationItem.currentViewPosition =
+                CGPointMake(x, viewController.layeredNavigationItem.currentViewPosition.y);
+                
+                viewController.layeredNavigationItem.initialViewPosition =
+                viewController.layeredNavigationItem.currentViewPosition;
+            }
+            [self doLayout];
+        }
+        
+    };
+    
+    
+    [UIView animateWithDuration:MAX(0.1,self.view.frame.size.width/2048.0)
+                          delay:0
+                        options: UIViewAnimationCurveEaseOut
+                     animations:^{
+                         doNewFrameMove();
+                     }
+                     completion:nil];
+
 }
 
 - (void)pushViewController:(UIViewController *)contentViewController
