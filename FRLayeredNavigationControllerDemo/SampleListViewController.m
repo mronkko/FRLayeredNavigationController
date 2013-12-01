@@ -1,7 +1,7 @@
 /*
  * This file is part of FRLayeredNavigationController.
  *
- * Copyright (c) 2012, Johannes Weiß <weiss@tux4u.de>
+ * Copyright (c) 2012, 2013, Johannes Weiß <weiss@tux4u.de>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -69,7 +69,7 @@
     NSLog(@"hooray");
 }
 
-- (void)viewWillAppear:(BOOL)animated
+- (void)viewWillAppear:(__unused BOOL)animated
 {
     self.layeredNavigationItem.leftBarButtonItem = [[UIBarButtonItem alloc]
                                                     initWithImage:[UIImage imageNamed:@"back.png"]
@@ -85,7 +85,7 @@
     self.layeredNavigationItem.rightBarButtonItem.style = UIBarButtonItemStyleBordered;
 }
 
-- (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
+- (BOOL)shouldAutorotateToInterfaceOrientation:(__unused UIInterfaceOrientation)interfaceOrientation
 {
 	return YES;
 }
@@ -116,7 +116,8 @@
     } else if (n == 9) {
         return @"buz";
     } else {
-        NSMutableString *s = [[NSMutableString alloc] initWithCapacity:n];
+        NSAssert(n >= 0, @"n negative");
+        NSMutableString *s = [[NSMutableString alloc] initWithCapacity:(NSUInteger)n];
         [s appendString:@"q"];
         for (int i=7; i<n; i++) {
             [s appendString:@"u"];
@@ -126,12 +127,12 @@
     }
 }
 
-- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView
+- (NSInteger)numberOfSectionsInTableView:(__unused UITableView *)tableView
 {
     return 1;
 }
 
-- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
+- (NSInteger)tableView:(__unused UITableView *)tableView numberOfRowsInSection:(__unused NSInteger)section
 {
     return 106;
 }
@@ -190,7 +191,7 @@
 
 #pragma mark - Table view delegate
 
-- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
+- (void)tableView:(__unused UITableView *)tableView didSelectRowAtIndexPath:(__unused NSIndexPath *)indexPath
 {
     UIViewController *svc = nil;
     NSString *title = [NSString stringWithFormat:@"%@ : %@", self.title, [self cellText:indexPath.row]];
@@ -205,8 +206,8 @@
                                                     animated:YES
                                                configuration:^(FRLayeredNavigationItem *item) {
                                                    UISegmentedControl *segControl = [[UISegmentedControl alloc]
-                                                                                     initWithItems:[NSArray
-                                                                                                    arrayWithObjects:@"foo", @"bar", @"buz", nil]];
+                                                                                     initWithItems:@[@"foo", @"bar",
+                                                                                                     @"buz"]];
                                                    segControl.segmentedControlStyle = UISegmentedControlStyleBar;
                                                    segControl.selectedSegmentIndex = 0;
 
@@ -220,7 +221,11 @@
         /* push a content view controller */
         svc = [[SampleContentViewController alloc] init];
         svc.title = title;
-        [self.layeredNavigationController pushViewController:svc inFrontOf:self maximumWidth:YES animated:NO configuration:^(FRLayeredNavigationItem *item) {
+        [self.layeredNavigationController pushViewController:svc
+                                                   inFrontOf:self
+                                                maximumWidth:YES
+                                                    animated:NO
+                                               configuration:^(FRLayeredNavigationItem *item) {
             item.hasChrome = NO;
         }];
     } else if (indexPath.row == 2) {

@@ -1,7 +1,7 @@
 /*
  * This file is part of FRLayeredNavigationController.
  *
- * Copyright (c) 2012, Johannes Weiß <weiss@tux4u.de>
+ * Copyright (c) 2012, 2013, Johannes Weiß <weiss@tux4u.de>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,17 +29,20 @@
 #import "FRLayerChromeView.h"
 #import "Utils.h"
 #import "FRNavigationBar.h"
+#import "FRiOSVersion.h"
 
-@interface FRLayerChromeView ()
+@interface FRLayerChromeView () {
+    UIView *_savedBackgroundView;
+}
+
 @property (nonatomic, readonly, strong) UIView *savedBackgroundView;
+@property (nonatomic, assign, readonly) BOOL iOS7OrNewer;
 
 @end
 
 @implementation FRLayerChromeView
-@synthesize savedBackgroundView = _savedBackgroundView;
-@synthesize title = _title;
 
-- (id)initWithFrame:(CGRect)frame titleView:(UIView *)titleView title:(NSString *)titleText
+- (id)initWithFrame:(CGRect)frame titleView:(UIView *)titleView title:(NSString *)titleText yOffset:(CGFloat)yOffset
 {
     self = [super initWithFrame:frame];
     if (self) {
@@ -53,7 +56,9 @@
                           barMetrics:UIBarMetricsDefault];
         [self addSubview:_toolbar];
 
-        self.title = titleText;
+        _title = titleText;
+        _yOffset = yOffset;
+        _iOS7OrNewer = [FRiOSVersion isIOS7OrNewer];
 
         if (titleView == nil) {
             UILabel *titleLabel = [[UILabel alloc] init];
@@ -64,14 +69,14 @@
             titleLabel.textAlignment = UITextAlignmentCenter;
 
 
-            titleLabel.font = [titleTextAttrs objectForKey:UITextAttributeFont];
+            titleLabel.font = titleTextAttrs[UITextAttributeFont];
 
-            titleLabel.textColor = [titleTextAttrs objectForKey:UITextAttributeTextColor];
+            titleLabel.textColor = titleTextAttrs[UITextAttributeTextColor];
 
-            titleLabel.shadowColor = [titleTextAttrs objectForKey:UITextAttributeTextShadowColor];
+            titleLabel.shadowColor = titleTextAttrs[UITextAttributeTextShadowColor];
 
-            if ([titleTextAttrs objectForKey:UITextAttributeTextShadowOffset]){
-                titleLabel.shadowOffset = [[titleTextAttrs objectForKey:UITextAttributeTextShadowOffset] CGSizeValue];
+            if (titleTextAttrs[UITextAttributeTextShadowOffset]){
+                titleLabel.shadowOffset = [titleTextAttrs[UITextAttributeTextShadowOffset] CGSizeValue];
             }
 
             self.titleView = titleLabel;
@@ -97,12 +102,12 @@
                                                       target:nil
                                                       action:nil];
 
-    if (self.leftBarButtonItem != nil && self.rightBarButtonItem != nil) {
-        [self.toolbar setItems:[NSArray arrayWithObjects:_leftBarButtonItem, flexibleSpace, _rightBarButtonItem, nil]];
-    } else if(self.leftBarButtonItem != nil && self.rightBarButtonItem == nil) {
-        [self.toolbar setItems:[NSArray arrayWithObject:_leftBarButtonItem]];
-    } else {
-        [self.toolbar setItems:[NSArray arrayWithObjects:flexibleSpace, _rightBarButtonItem, nil]];
+    if (self.leftBarButtonItem && self.rightBarButtonItem) {
+        [self.toolbar setItems:@[_leftBarButtonItem, flexibleSpace, _rightBarButtonItem]];
+    } else if (self.leftBarButtonItem) {
+        [self.toolbar setItems:@[_leftBarButtonItem]];
+    } else if (self.rightBarButtonItem) {
+        [self.toolbar setItems:@[flexibleSpace, _rightBarButtonItem]];
     }
 
     [self setNeedsLayout];
@@ -134,33 +139,63 @@
 {
     [super layoutSubviews];
 
-    CGFloat barButtonItemsSpace = (self.leftBarButtonItem!=nil?44:0) + (self.rightBarButtonItem!=nil?44:0);
+    CGFloat barButtonItemsSpace = (self.leftBarButtonItem!=nil?48:0) + (self.rightBarButtonItem!=nil?48:0);
 
-    self.toolbar.frame = CGRectMake(0, 0, CGRectGetWidth(self.bounds), CGRectGetHeight(self.bounds));
+    self.toolbar.frame = CGRectMake(0,
+                                    self.yOffset,
+                                    CGRectGetWidth(self.bounds),
+                                    CGRectGetHeight(self.bounds)-self.yOffset);
 
     CGRect headerMiddleFrame = CGRectMake(10 + (barButtonItemsSpace/2),
                                           0,
                                           CGRectGetWidth(self.bounds)-20-barButtonItemsSpace,
-                                          CGRectGetHeight(self.bounds));
+                                          CGRectGetHeight(self.bounds)-self.yOffset);
 
     CGSize titleFittingSize = [self.titleView sizeThatFits:headerMiddleFrame.size];
-    CGRect titleFrame = CGRectMake(MAX((headerMiddleFrame.size.width - titleFittingSize.width)/2,
-                                       headerMiddleFrame.origin.x),
+    CGRect titleFrame = CGRectMake(0 /* irrelevant, will be overriden by centering it */,
                                    MAX((headerMiddleFrame.size.height - titleFittingSize.height)/2,
                                        headerMiddleFrame.origin.y),
                                    MIN(titleFittingSize.width, headerMiddleFrame.size.width),
                                    MIN(titleFittingSize.height, headerMiddleFrame.size.height));
 
     self.titleView.frame = titleFrame;
+    self.titleView.center = self.center;
+    self.titleView.frame = CGRectMake(CGRectGetMinX(self.titleView.frame),
+                                      CGRectGetMinY(self.titleView.frame)+(self.yOffset/2),
+                                      CGRectGetWidth(self.titleView.frame),
+                                      CGRectGetHeight(self.titleView.frame));
 }
 
-- (CGGradientRef)gradient
+- (CGGradientRef)gradientIOS6AndOlder
 {
     if (NULL == _savedGradient) {
         CGFloat colors[12] = {
-            244.0/255.0, 245.0/255.0, 247.0/255.0, 1.0,
-            223.0/255.0, 225.0/255.0, 230.0/255.0, 1.0,
-            167.0/244.0, 171.0/255.0, 184.0/255.0, 1.0,
+            244.0f/255.0f, 245.0f/255.0f, 247.0f/255.0f, 1.0,
+            223.0f/255.0f, 225.0f/255.0f, 230.0f/255.0f, 1.0,
+            167.0f/244.0f, 171.0f/255.0f, 184.0f/255.0f, 1.0,
+        };
+        CGFloat locations[3] = { 0.05f, 0.45f, 0.95f };
+
+        CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
+
+        _savedGradient = CGGradientCreateWithColorComponents(colorSpace,
+                                                             colors,
+                                                             locations,
+                                                             3);
+
+        CGColorSpaceRelease(colorSpace);
+    }
+
+    return _savedGradient;
+}
+
+- (CGGradientRef)gradientIOS7AndNewer
+{
+    if (NULL == _savedGradient) {
+        CGFloat colors[12] = {
+            248.0f/255.0f, 248.0f/255.0f, 248.0f/255.0f, 0.97f,
+            248.0f/255.0f, 248.0f/255.0f, 248.0f/255.0f, 0.97f,
+            248.0f/255.0f, 248.0f/255.0f, 248.0f/255.0f, 0.97f,
         };
         CGFloat locations[3] = { 0.05f, 0.45f, 0.95f };
 
@@ -188,7 +223,7 @@
     return _savedBackgroundView;
 }
 
-- (void)drawRect:(CGRect)rect
+- (void)drawRectIO6AndOlder:(__unused CGRect)rect
 {
     if (self.savedBackgroundView && self.savedBackgroundView.superview == nil) {
         [self insertSubview:self.savedBackgroundView atIndex:0];
@@ -205,15 +240,37 @@
         CGPoint end = CGPointMake(CGRectGetMidX(self.bounds),
                                   CGRectGetMaxY(self.bounds));
 
-        CGGradientRef gradient = [self gradient];
+        CGGradientRef gradient = [self gradientIOS6AndOlder];
 
         CGContextDrawLinearGradient(ctx, gradient, start, end, 0);
     }
 }
 
-@synthesize leftBarButtonItem = _leftBarButtonItem;
-@synthesize rightBarButtonItem = _rightBarButtonItem;
-@synthesize toolbar = _toolbar;
-@synthesize titleView = _titleView;
+- (void)drawRectIO7AndNewer:(__unused CGRect)rect
+{
+    if (self.savedBackgroundView && self.savedBackgroundView.superview == nil) {
+        [self insertSubview:self.savedBackgroundView atIndex:0];
+    } else {
+        CGContextRef ctx = UIGraphicsGetCurrentContext();
+
+        CGPoint start = CGPointMake(CGRectGetMidX(self.bounds), 0);
+        CGPoint end = CGPointMake(CGRectGetMidX(self.bounds),
+                                  CGRectGetMaxY(self.bounds));
+
+        CGGradientRef gradient = [self gradientIOS7AndNewer];
+
+        CGContextDrawLinearGradient(ctx, gradient, start, end, 0);
+    }
+}
+
+- (void)drawRect:(CGRect)rect
+{
+    if (self.iOS7OrNewer) {
+        [self drawRectIO7AndNewer:rect];
+    } else {
+        [self drawRectIO6AndOlder:rect];
+    }
+}
+
 
 @end

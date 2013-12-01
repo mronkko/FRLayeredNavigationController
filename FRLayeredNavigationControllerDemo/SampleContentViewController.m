@@ -1,7 +1,7 @@
 /*
  * This file is part of FRLayeredNavigationController.
  *
- * Copyright (c) 2012, Johannes Weiß <weiss@tux4u.de>
+ * Copyright (c) 2012, 2013, Johannes Weiß <weiss@tux4u.de>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -52,7 +52,7 @@
     return self;
 }
 
--(UIView *) viewForZoomingInScrollView:(UIScrollView *)inScroll {
+-(UIView *) viewForZoomingInScrollView:(__unused UIScrollView *)inScroll {
     return self.imageView;
 }
 
@@ -82,10 +82,10 @@
 }
 
 - (void)viewWillLayoutSubviews {
-    scrollView.contentSize = CGSizeMake(self.view.bounds.size.width, self.view.bounds.size.height);
+    _scrollView.contentSize = CGSizeMake(self.view.bounds.size.width, self.view.bounds.size.height);
 }
 
-- (void)viewWillAppear:(BOOL)animated
+- (void)viewWillAppear:(__unused BOOL)animated
 {
     self.layeredNavigationItem.leftBarButtonItem = [[UIBarButtonItem alloc]
                                                     initWithImage:[UIImage imageNamed:@"back.png"]
@@ -122,17 +122,14 @@
     self.imageView = nil;
 }
 
-- (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
+- (BOOL)shouldAutorotateToInterfaceOrientation:(__unused UIInterfaceOrientation)interfaceOrientation
 {
 	return YES;
 }
 
-- (void)indexDidChangeForSegmentedControl:(UISegmentedControl *)sc
+- (void)indexDidChangeForSegmentedControl:(__unused UISegmentedControl *)sc
 {
     NSLog(@"SC changed");
 }
-
-@synthesize imageView;
-@synthesize scrollView;
 
 @end

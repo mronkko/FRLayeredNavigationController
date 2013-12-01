@@ -2,6 +2,7 @@
  * This file is part of FRLayeredNavigationController.
  *
  * Copyright (c) 2012, Apurva Mehta <apurva.1618@gmail.com>
+ *               2013, Johannes Weiß <weiss@tux4u.de>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,8 +33,27 @@
 static FRNavigationBar *_appearance = nil;
 
 @implementation FRNavigationBar
-@synthesize backgroundImage = _backgroundImage;
-@synthesize titleTextAttributes = _titleTextAttributes;
+
++ (NSDictionary *)defaultTextAttributesIO6AndOlder
+{
+    return @{UITextAttributeFont: [UIFont boldSystemFontOfSize:20.5],
+             UITextAttributeTextShadowColor: [UIColor whiteColor],
+             UITextAttributeTextColor:[UIColor colorWithRed:111.0f/255.0f
+                                                      green:118.0f/255.0f
+                                                       blue:126.0f/255.0f
+                                                      alpha:1.0f]};
+}
+
++ (NSDictionary *)defaultTextAttributesIO7AndNewer
+{
+    return @{UITextAttributeFont: [UIFont boldSystemFontOfSize:18],
+             UITextAttributeTextColor:[UIColor blackColor]};
+}
+
++ (NSDictionary *)defaultTextAttributes
+{
+    return [FRNavigationBar defaultTextAttributesIO7AndNewer];
+}
 
 + (FRNavigationBar *)appearance
 {
@@ -42,26 +62,13 @@ static FRNavigationBar *_appearance = nil;
         _appearance = [[FRNavigationBar alloc] init];
         _appearance.backgroundImage = nil;
 
-        _appearance.titleTextAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
-                                           [UIFont boldSystemFontOfSize:20.5],
-                                           UITextAttributeFont,
-
-                                           [UIColor whiteColor],
-                                           UITextAttributeTextShadowColor,
-
-                                           [UIColor colorWithRed:111.0f/255.0f
-                                                           green:118.0f/255.0f
-                                                            blue:126.0f/255.0f
-                                                           alpha:1.0f],
-                                           UITextAttributeTextColor,
-
-                                           nil];
+        _appearance.titleTextAttributes = [FRNavigationBar defaultTextAttributes];
     }
 
     return _appearance;
 }
 
-+ (FRNavigationBar *)appearanceWhenContainedIn:(Class <UIAppearanceContainer>)ContainerClass,...
++ (FRNavigationBar *)appearanceWhenContainedIn:(__unused Class <UIAppearanceContainer>)ContainerClass,...
 {
     return [FRNavigationBar appearance];
 }

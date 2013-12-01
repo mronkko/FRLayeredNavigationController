@@ -1,7 +1,7 @@
 /*
  * This file is part of FRLayeredNavigationController.
  *
- * Copyright (c) 2012, Johannes Weiß <weiss@tux4u.de>
+ * Copyright (c) 2012, 2013, Johannes Weiß <weiss@tux4u.de>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,10 +30,9 @@
 #import "FRLayerController.h"
 #import "FRLayerChromeView.h"
 #import "FRLayeredNavigationItem+Protected.h"
+#import "FRiOSVersion.h"
 
 #import <QuartzCore/QuartzCore.h>
-
-#define FRLayerChromeHeight ((CGFloat)44)
 
 @interface FRLayerController ()
 
@@ -44,6 +43,8 @@
 @property (nonatomic, strong) FRLayerChromeView *chromeView;
 @property (nonatomic, strong) UIView *borderView;
 @property (nonatomic, weak) UIView *contentView;
+
+@property (nonatomic, assign, readonly) BOOL isIOS7OrNewer;
 
 @end
 
@@ -57,6 +58,7 @@
         _layeredNavigationItem = [[FRLayeredNavigationItem alloc] init];
         _layeredNavigationItem.layerController = self;
         _contentViewController = vc;
+        _isIOS7OrNewer = [FRiOSVersion isIOS7OrNewer];
         [_contentViewController addObserver:self forKeyPath:@"title" options:NSKeyValueObservingOptionNew context:nil];
         _maximumWidth = maxWidth;
     }
@@ -65,12 +67,12 @@
 }
 
 - (void)observeValueForKeyPath:(NSString *)keyPath
-                      ofObject:(id)object
+                      ofObject:(__unused id)object
                         change:(NSDictionary *)change
-                       context:(void *)context
+                       context:(__unused void *)context
 {
     if ([keyPath isEqualToString:@"title"]) {
-        self.chromeView.title = [change objectForKey:@"new"];
+        self.chromeView.title = change[@"new"];
     }
 }
 
@@ -82,34 +84,53 @@
 
 #pragma mark - internal methods
 
+- (CGFloat)layerChromeHeight
+{
+    return self.isIOS7OrNewer ? 64 : 44;
+}
+
+- (CGFloat)layerChromeOffset
+{
+    return self.isIOS7OrNewer ? 20 : 0;
+}
+
 - (void)doViewLayout
 {
     CGRect contentFrame = CGRectZero;
+    CGRect borderFrame = CGRectZero;
+    const CGFloat borderSpacing = self.layeredNavigationItem.hasBorder ? 1 : 0;
 
     if (self.layeredNavigationItem.hasChrome) {
         CGRect chromeFrame = CGRectMake(0,
                                         0,
                                         CGRectGetWidth(self.view.bounds),
-                                        FRLayerChromeHeight);
-        CGRect borderFrame = CGRectMake(0,
-                                        FRLayerChromeHeight,
-                                        CGRectGetWidth(self.view.bounds),
-                                        CGRectGetHeight(self.view.bounds)-FRLayerChromeHeight);
-        contentFrame = CGRectMake(1,
-                                  FRLayerChromeHeight + 1,
-                                  CGRectGetWidth(self.view.bounds)-2,
-                                  CGRectGetHeight(self.view.bounds)-FRLayerChromeHeight-2);
-        self.borderView.frame = borderFrame;
+                                        [self layerChromeHeight]);
+        borderFrame = CGRectMake(0,
+                                 [self layerChromeHeight],
+                                 CGRectGetWidth(self.view.bounds),
+                                 CGRectGetHeight(self.view.bounds)-[self layerChromeHeight]);
+        contentFrame = CGRectMake(borderSpacing,
+                                  [self layerChromeHeight] + borderSpacing,
+                                  CGRectGetWidth(self.view.bounds)-(2*borderSpacing),
+                                  CGRectGetHeight(self.view.bounds)-[self layerChromeHeight]-(2*borderSpacing));
         self.chromeView.frame = chromeFrame;
     } else {
-        contentFrame = CGRectMake(0,
-                                  0,
-                                  CGRectGetWidth(self.view.bounds),
-                                  CGRectGetHeight(self.view.bounds));
+        borderFrame = CGRectMake(0,
+                                 0,
+                                 CGRectGetWidth(self.view.bounds),
+                                 CGRectGetHeight(self.view.bounds));
+        contentFrame = CGRectMake(borderSpacing,
+                                  borderSpacing,
+                                  CGRectGetWidth(self.view.bounds)-(2*borderSpacing),
+                                  CGRectGetHeight(self.view.bounds)-(2*borderSpacing));
     }
 
-
-    self.contentView.frame = contentFrame;
+    if (self.layeredNavigationItem.hasBorder) {
+        self.borderView.frame = borderFrame;
+    }
+    if (self.layeredNavigationItem.autosizeContent) {
+        self.contentView.frame = contentFrame;
+    }
 }
 
 
@@ -122,17 +143,22 @@
 
     const FRLayeredNavigationItem *navItem = self.layeredNavigationItem;
 
+    if (navItem.hasBorder) {
+        self.borderView = [[UIView alloc] init];
+        self.borderView.backgroundColor = [UIColor clearColor];
+        self.borderView.layer.borderWidth = 1;
+        self.borderView.layer.borderColor = [UIColor colorWithWhite:236.0f/255.0f alpha:1].CGColor;
+        [self.view addSubview:self.borderView];
+    }
+
     if (self.layeredNavigationItem.hasChrome) {
         self.chromeView = [[FRLayerChromeView alloc] initWithFrame:CGRectZero
                                                          titleView:navItem.titleView
                                                              title:navItem.title == nil ?
-                           self.contentViewController.title : navItem.title];
-
-        self.borderView = [[UIView alloc] init];
-        self.borderView.backgroundColor = [UIColor colorWithWhite:236.0f/255.0f alpha:1];
+                           self.contentViewController.title : navItem.title
+                                                           yOffset:[self layerChromeOffset]];
 
         [self.view addSubview:self.chromeView];
-        [self.view addSubview:self.borderView];
     }
 
     if (self.contentView == nil && self.contentViewController.parentViewController == self) {
@@ -168,7 +194,7 @@
     self.contentView = nil;
 }
 
-- (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
+- (BOOL)shouldAutorotateToInterfaceOrientation:(__unused UIInterfaceOrientation)interfaceOrientation
 {
     return YES;
 }
@@ -204,12 +230,5 @@
         [self.contentViewController removeFromParentViewController];
     }
 }
-
-@synthesize contentViewController = _contentViewController;
-@synthesize maximumWidth = _maximumWidth;
-@synthesize borderView = _borderView;
-@synthesize chromeView = _chromeView;
-@synthesize layeredNavigationItem = _layeredNavigationItem;
-@synthesize contentView = _contentView;
 
 @end

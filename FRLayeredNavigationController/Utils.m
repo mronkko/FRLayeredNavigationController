@@ -1,7 +1,7 @@
 /*
  * This file is part of FRLayeredNavigationController.
  *
- * Copyright (c) 2012, Johannes Weiß <weiss@tux4u.de>
+ * Copyright (c) 2012, 2013, Johannes Weiß <weiss@tux4u.de>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,7 +32,7 @@
 
 BOOL CGFloatEquals(CGFloat l, CGFloat r)
 {
-    return abs(l-r) < 0.1;
+    return fabs(l-r) < 0.1;
 }
 
 BOOL CGFloatNotEqual(CGFloat l, CGFloat r)

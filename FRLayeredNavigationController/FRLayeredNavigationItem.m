@@ -1,7 +1,7 @@
 /*
  * This file is part of FRLayeredNavigationController.
  *
- * Copyright (c) 2012, Johannes Weiß <weiss@tux4u.de>
+ * Copyright (c) 2012, 2013, Johannes Weiß <weiss@tux4u.de>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -46,8 +46,11 @@
     if ((self = [super init])) {
         self->_width = -1;
         self->_nextItemDistance = -1;
+        self->_snappingDistance = -1;
         self->_hasChrome = YES;
         self->_displayShadow = YES;
+        self->_hasBorder = YES;
+        self->_autosizeContent = YES;
     }
 
     return self;
@@ -72,16 +75,5 @@
 {
     return self.layerController.chromeView.rightBarButtonItem;
 }
-
-
-@synthesize initialViewPosition = _initialViewPosition;
-@synthesize currentViewPosition = _currentViewPosition;
-@synthesize title = _title;
-@synthesize titleView = _titleView;
-@synthesize width = _width;
-@synthesize nextItemDistance = _nextItemDistance;
-@synthesize hasChrome = _hasChrome;
-@synthesize displayShadow = _displayShadow;
-@synthesize layerController = _layerController;
 
 @end

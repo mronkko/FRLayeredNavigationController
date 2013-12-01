@@ -1,7 +1,7 @@
 /*
  * This file is part of FRLayeredNavigationController.
  *
- * Copyright (c) 2012, Johannes Weiß <weiss@tux4u.de>
+ * Copyright (c) 2012, 2013, Johannes Weiß <weiss@tux4u.de>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,19 +30,15 @@
 
 @interface FRLayerChromeView : UIView {
     CGGradientRef _savedGradient;
-    UIToolbar *_toolbar;
-    UIBarButtonItem *_leftBarButtonItem;
-    UIBarButtonItem *_rightBarButtonItem;
-    UIView *_titleView;
-    NSString *_title;
 }
 
-- (id)initWithFrame:(CGRect)frame titleView:(UIView *)titleView title:(NSString *)titleText;
+- (id)initWithFrame:(CGRect)frame titleView:(UIView *)titleView title:(NSString *)titleText yOffset:(CGFloat)yOffset;
 
 @property (nonatomic, strong) UIBarButtonItem *leftBarButtonItem;
 @property (nonatomic, strong) UIBarButtonItem *rightBarButtonItem;
 @property (nonatomic, readonly, strong) UIToolbar *toolbar;
 @property (nonatomic, strong) UIView *titleView;
 @property (nonatomic, strong) NSString *title;
+@property (nonatomic, readonly, assign) CGFloat yOffset;
 
 @end
